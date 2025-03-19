@@ -1,0 +1,99 @@
+{
+  "name": "https://github.com/muzafferkadir/crawlee-api Example",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/crawl",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"urls\": [\"https://www.linkedin.com/jobs/search/?currentJobId=4105995302&distance=25&f_WT=1%2C3&geoId=102105699&keywords=Yaz%C4%B1l%C4%B1m%20M%C3%BChendisi&origin=JOBS_HOME_SEARCH_CARDS\"],\n  \"selectors\": [\n    {\n      \"name\": \"title\",\n      \"query\": \".base-search-card__title\",\n      \"type\": \"text\",\n      \"multiple\":true\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        20
+      ],
+      "id": "375c6b4f-be9a-4f5f-adf7-33b0ea58487b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        20
+      ],
+      "id": "f84102dc-4a83-4ad7-a600-b66f7c52eb3b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "553762443",
+        "text": "=İş ilanı:\n\nBaşlık\n{{ $json.results[0].title }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        20
+      ],
+      "id": "4b63627f-f05f-4b92-9c0c-da817355ab5e",
+      "name": "Telegram",
+      "webhookId": "c6a69cb4-a002-4ddd-918e-23eb041ef9db",
+      "credentials": {
+        "telegramApi": {
+          "id": "QCtOfQT6jEPqwauY",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8689ed6c-4e44-4d65-afd5-9bafde9aa05f",
+  "meta": {
+    "instanceId": "213357d44110d65b8aa07ee93b7444586a4264bb054cac05d9147abdaf8f2617"
+  },
+  "id": "nBqWiQSlJeUl22wZ",
+  "tags": []
+}

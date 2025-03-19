@@ -1,0 +1,202 @@
+{
+  "name": "Static Web Scraping Telegram Notifier",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://trakt.tv/movies/trending",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "bcaaac54-b19a-418f-9c08-087ce900b59b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "movies",
+              "cssSelector": ".grid-item",
+              "returnValue": "html",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "a374cad8-6bfc-4868-b5cb-0b1a61e90855",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "movies",
+        "options": {
+          "destinationFieldName": "movie"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "id": "610b976e-a0bd-44eb-aa34-40aaa97b0164",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "movie",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "h3"
+            },
+            {
+              "key": "link",
+              "cssSelector": "meta",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "image",
+              "cssSelector": ".real",
+              "returnValue": "attribute",
+              "attribute": "data-original"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "c75fc184-13e9-41dc-a87e-2a0d99507792",
+      "name": "HTML1"
+    },
+    {
+      "parameters": {
+        "chatId": "553762443",
+        "text": "=Günün Trend Filmleri {{ $itemIndex + 1 }}\n\n{{ $json.title }}\n{{ $json.link }}\n{{ $json.image }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        0
+      ],
+      "id": "91e5c9bc-ba7c-436c-afa8-9fcbd05cd66b",
+      "name": "Telegram",
+      "webhookId": "c00e1e5d-66a1-48eb-b309-5f6a87cf5610",
+      "credentials": {
+        "telegramApi": {
+          "id": "QCtOfQT6jEPqwauY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6c51f749-293f-4213-8de6-139535988566",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML1": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aa19f4e9-ecd0-4b88-be0c-e3cd525d2aa9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "213357d44110d65b8aa07ee93b7444586a4264bb054cac05d9147abdaf8f2617"
+  },
+  "id": "arEnBVpysuZ9OIM5",
+  "tags": []
+}
