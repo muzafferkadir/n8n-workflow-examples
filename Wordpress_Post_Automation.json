@@ -1,0 +1,586 @@
+{
+  "name": "Wordpress Post Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        500,
+        2400
+      ],
+      "id": "5423c1b7-5d70-42eb-98ab-3957f848189a",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        360
+      ],
+      "id": "692f2eeb-1348-4ca0-be7f-e2f1dd6e644a",
+      "name": "When chat message received",
+      "webhookId": "883e3a22-8ccc-45bb-9b40-ba9abc273df8"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Verilen konu hakkında bir blog yazısı yazmanı istiyorum. Mümkün olduğunda SEO kurallarına uygun olsun. Bilgilendirici ve merak uyandırıcı bir dil kullan"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        80,
+        360
+      ],
+      "id": "177361a2-5b20-48ea-9edd-e380d940e104",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-2024-05-13",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        168,
+        580
+      ],
+      "id": "441a2642-7522-466f-9ecd-7486130fb9ef",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "3d0YzkQcKcDSmeAK",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Aşağıda içeriği verilmiş olan makale için kullanılabilecek birkaç fotoğraf promptu yazmanı istiyorum. Konu ile alakalı olsun fotoğraflar ilgi çekici ve muzip bir tarza sahip olsun. Mümkün olduğunca detaylı promptlar yaz. Sonuç olarak JSON dön.\nÖrnek Çıktı:\n{\nimages:[{\nprompt:\"red carpet on the beatiful coast scene\",\nfileName:\"vacation-image.png\"\n}]\n}\n\nMakale:\n{{ $json.response.text }}",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        456,
+        360
+      ],
+      "id": "64b742ad-1843-4d6e-93d5-b7b861ed600c",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        484,
+        580
+      ],
+      "id": "d3dece2d-47a2-48ae-8d30-ebb5a9f304de",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "3d0YzkQcKcDSmeAK",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"images\":[{\n\"prompt\":\"red carpet on the beatiful coast scene\",\n\"fileName\":\"vacation-image.png\"\n}]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        604,
+        580
+      ],
+      "id": "3db0df1d-2e54-4a8a-a962-375df77974be",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.images",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        832,
+        360
+      ],
+      "id": "e10961d1-6c18-4b68-be62-17f6019170d3",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "predictions[0].bytesBase64Encoded",
+        "binaryPropertyName": "data.png",
+        "options": {
+          "fileName": "={{ $('Split Out').item.json.fileName }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1272,
+        360
+      ],
+      "id": "fb7b3c81-647e-470b-8878-e72d7e17d53d",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=APIKEYEKLE",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n        \"instances\": [\n          {\n            \"prompt\": \"{{ $json.prompt }}\"\n          }\n        ],\n        \"parameters\": {\n          \"sampleCount\": 1\n        }\n      } ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1052,
+        360
+      ],
+      "id": "02ba95cd-6a9c-47cb-b4c8-23161d949c61",
+      "name": "Create Image via Gemini1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<WORDPRESS_ADRES>/wp-json/wp/v2/media",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "image/png"
+            },
+            {
+              "name": "Content-Disposition",
+              "value": "=attachment; filename={{ $binary['data.png'].fileName }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data.png",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        360
+      ],
+      "id": "d1493393-766e-4be7-93f5-c7b47536be4d",
+      "name": "Upload Photo to Wordpress1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "jh3PpyoQZbNfAgHp",
+          "name": "Wordpress Blog Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "guid.rendered"
+            },
+            {
+              "fieldToAggregate": "generated_slug"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1720,
+        360
+      ],
+      "id": "0af317d6-90cb-4a91-97d5-1876a9cc4428",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sana verilen bilgilerle alakalı bir blog yazısı üret. Çıktıyı sadece saf HTML olarak ver. **Kesinlikle markdown içinde code block kullanma.** \n\nYani:\n- ```html gibi markdown kod blokları kullanma\n- \\n karakteri kullanma\n- HTML'yi escape etme (örneğin `<` yerine `&lt;` yazma)\n\nSadece direkt HTML ver:\n\n<h1>Başlık</h1>\n<p>Paragraf</p>\n<img src=\"gorsel.png\" alt=\"Açıklama\">\n\nFotoğraflar:\n{{ $json.rendered.join(' ') }}\n\nFotoğraf Açıklamaları:\n{{ $('Basic LLM Chain1').item.json.output.images.map(item => item.fileName+ ': '+item.prompt).join('\\n ') }}\n\nMakale İçeriği:\n{{ $('Basic LLM Chain').item.json.response.text }}\n",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1940,
+        360
+      ],
+      "id": "fcab9071-1aba-43ee-81ae-0bfe6b6d32b8",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1940,
+        620
+      ],
+      "id": "9ce66d1c-e2cb-461c-8aa0-bb650a467e80",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "3d0YzkQcKcDSmeAK",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<WORDPRESS_ADRES>/wp-json/wp/v2/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"title\": \"{{ $('When chat message received').item.json.chatInput.toTitleCase() }}\",\n    \"content\":{{ $json.content }},\n    \"status\": \"publish\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2480,
+        360
+      ],
+      "id": "d9e856a2-726d-4941-8a5a-cc2f20c51c5a",
+      "name": "Send Post1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "jh3PpyoQZbNfAgHp",
+          "name": "Wordpress Blog Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Sana verilen bilgilerle alakalı bir blog yazısı üret. Çıktıyı sadece saf HTML olarak ver. **Kesinlikle markdown içinde code block kullanma.** \n\nYani:\n- ```html gibi markdown kod blokları kullanma\n- \\n karakteri kullanma\n- HTML'yi escape etme (örneğin `<` yerine `&lt;` yazma)\n\nSadece direkt HTML ver:\n\n<h1>Başlık</h1>\n<p>Paragraf</p>\n<img src=\"gorsel.png\" alt=\"Açıklama\">\n\nFotoğraflar:\nhttps://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-modern-desk.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-soundwave.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-fitness.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-comparison.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-bluetooth-fun.png\n\nFotoğraf Açıklamaları:\nairpods-modern-desk.png: A sleek AirPods 4 sitting on a stylish desk with modern gadgets, sunlight shining, a cup of coffee beside it, and a small plant in the background, showcasing its ergonomic and modern design in a vibrant and artistic setting.\n airpods-soundwave.png: A colorful soundwave pattern emanating from a pair of AirPods 4, illustrating the improved sound quality, depicted in a fun cartoon style with musical notes and vibrant colors that capture the essence of a joyful listening experience.\n airpods-fitness.jpg: A person jogging in a park, wearing AirPods 4, with a fitness tracker on their wrist. The background features trees, a sunny sky, and a playful dog running nearby, emphasizing the health and fitness tracking capabilities of the earbuds.\n airpods-comparison.png: An illustrated comparison of AirPods 3 and AirPods 4, with playful characters depicting the upgrades, featuring elements like a battery symbol representing prolonged battery life and a wireless charging icon, all set in a light-hearted comic book style.\n airpods-bluetooth-fun.png: A whimsical digital scene showing a Bluetooth connection with AirPods 4 flying through the air, surrounded by cute animated clouds and devices like an iPhone and MacBook, symbolizing the seamless connectivity and technology behind the new model.\n\nMakale İçeriği:\n# AirPods 4 Yakında! Yeniliklerle Dolu Bir Deneyime Hazır Olun\n\nGünümüzde kablosuz kulaklıklar, teknoloji meraklıları için vazgeçilmez bir aksesuar haline geldi. Apple'ın bu konudaki başarısı ise rakipsiz diyebiliriz. AirPods serisinin son üyesi olan AirPods 4, tanıtımına kısa bir süre kala büyük bir heyecan yaratıyor. Peki, AirPods 4'te bizi hangi yeni özellikler bekliyor? İşte bu yazıda AirPods 4'ün dikkat çeken yeniliklerini ve kullanıcıların beklentilerini sizlerle paylaşıyoruz.\n\n## Tasarımda Estetik ve Ergonomi\n\nAirPods 4, kullanıcıların rahatlığını artırmak için tasarımda bazı önemli değişiklikler yapacak. Kulaklıkların daha ergonomik bir yapıya kavuşturulması ve farklı kulak tiplerine daha iyi uyum sağlaması bekleniyor. Yeni tasarımın, önceki modellerden daha şık ve modern olacağı da söyleniyor.\n\n## Geliştirilmiş Ses Kalitesi\n\nApple, her yeni modeliyle ses kalitesini bir adım ileri taşıyor. AirPods 4'te de bu geleneğin devam edeceği kesin. Daha iyi bas ve tizlere sahip, daha net ve temiz bir ses deneyimi sunulması hedefleniyor. Ayrıca, aktif gürültü engelleme özelliğinde de önemli iyileştirmeler yapılacağı konuşuluyor.\n\n## Güncellenmiş Bağlantı Teknolojisi\n\nAirPods 4, daha hızlı ve daha güvenilir bir bağlantı sunacak yeni bir çip ile gelebilir. Bu, kullanıcıların kesintisiz bir müzik ve konuşma deneyimi yaşaması anlamına geliyor. Bluetooth 5.2 teknolojisiyle daha düşük enerji tüketimi ve daha uzun batarya ömrü de sağlanacak.\n\n## Uzun Batarya Ömrü\n\nBatarya ömrü, kablosuz kulaklık kullanıcıları için her zaman önemli bir konu olmuştur. AirPods 4, daha uzun süreli kullanım sunarak kullanıcılarını memnun edecek. Tek şarjla daha uzun konuşma süresi ve müzik dinleme süresi vaat ediliyor. Ayrıca, şarj kutusunun kablosuz şarj teknolojisi ile uyumlu olması bekleniyor.\n\n## Sağlık ve Fitness Takibi\n\nApple’ın sağlık ve fitness özellikleriyle dikkat çeken ürünlerine yeni bir ekleme yapması olası. AirPods 4, kullanıcıların sağlık ve fitness aktivitelerini takip etmelerinde yardımcı olan sensörlerle donatılabilir. Bu sayede kalp atış hızı, adım sayısı gibi çeşitli veriler de gerçek zamanlı olarak izlenebilir.\n\n## Fiyat ve Çıkış Tarihi\n\nAirPods 4'ün fiyatı ve çıkış tarihi hakkında henüz resmi bir açıklama yapılmadı. Ancak, önceki modellerin fiyat aralığında olacağı tahmin ediliyor. Tanıtım tarihi yaklaştıkça bu konularda daha fazla bilgi edinmeye başlayacağız.\n\n## Sonuç\n\nAirPods 4, özellikle kablosuz kulaklık deneyiminde yeni bir çıta belirleyecek gibi görünüyor. Geliştirilmiş ses kalitesi, yenilikçi tasarımı, uzun batarya ömrü ve sağlık takibi gibi özelliklerle kullanıcılarının beklentilerini fazlasıyla karşılayacak. Apple, bu yeni modeliyle yine teknoloji dünyasında büyük bir yankı uyandıracak.\n\nYeni gelişmeleri kaçırmamak için blogumuzdan ve sosyal medya hesaplarımızdan bizi takip etmeyi unutmayın! AirPods 4 hakkında daha fazla bilgi ve detaylar ortaya çıktıkça sizlerle paylaşmaya devam edeceğiz.\n\nSonuç olarak JSON örneği:\n{\n\t\"html\": \"<h1>Başlık</h1><p>Açıklama</p>\"\n}\n\nFotoğraflar:\nhttps://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-dance.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-beach.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-futuristic-city.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-superheroes.png https://n8n-wordpress.mkdir.dev/wp-content/uploads/2025/04/airpods-cartoon-animals.png\n\nÜretilen Fotoğrafların Promptları\nairpods-dance.png: A whimsical illustration of two AirPods dancing on a vibrant musical note background, surrounded by colorful sound waves and fun musical icons.\n airpods-beach.png: A close-up of AirPods 4 with a playful design where the AirPods are wearing tiny sunglasses and relaxing on a beach chair, with the ocean waves in the background.\n airpods-futuristic-city.png: A fantastical scene depicting AirPods 4 flying through a colorful city, showing various futuristic devices in the background and animated sound waves surrounding them.\n airpods-superheroes.png: An engaging image where AirPods 4 are portrayed as superheroes, flying over a cityscape with soundwave trails behind them, showcasing their advanced audio technology capabilities.\n airpods-cartoon-animals.png: A quirky portrayal of AirPods 4 being used by cute cartoon animals, showing them enjoying music in a park setting, with vibrant trees and flowers all around.\n\nMakale içeriği:\n**Apple AirPods 4: Beklentiler ve Yeni Özellikler**\n\nApple'ın efsanevi kablosuz kulaklık serisi AirPods'un en son sürümü olan AirPods 4, teknoloji meraklıları ve Apple fanatikleri arasında büyük bir heyecan yarattı. Peki, bu yeni sürümde bizi neler bekliyor? AirPods 4 hakkında şimdiye kadar bilinenler ve spekülasyonlar ışığında detayları keşfedelim.\n\n### AirPods 4'ün Tasarımı: Kimlik Koruması ve Yenilik\n\nAirPods 4'ün tasarımı, önceki nesillerin estetiğini korurken küçük ancak etkili değişiklikler içermesi bekleniyor. Daha kompakt bir şarj kutusu ve kulakta daha rahat oturumu hedefleyen ergonomik bir yapı dikkat çekiyor. Ayrıca, kulaklıkların suya ve toza karşı daha dayanıklı olması da beklenen özellikler arasında.\n\n### Ses Kalitesi: Üst Seviye Deneyim\n\nAirPods 4'ün en dikkat çekici özelliklerinden biri geliştirilen ses kalitesi olacak gibi görünüyor. Apple'ın Spatial Audio teknolojisi ve aktif gürültü engelleyici özelliklerinin daha da iyileştirilmiş versiyonlarının bu modelde yer alması bekleniyor. Bu, kullanıcıların müzik, film ve oyun deneyimlerini bir üst seviyeye taşıyacak büyük bir adım olabilir.\n\n### Daha Uzun Pil Ömrü\n\nPil ömrü, kablosuz kulaklık kullanıcıları için her zaman kritik bir konudur. AirPods 4'ün, daha uzun süreler boyunca kesintisiz müzik dinlemek ve konuşma yapmak için geliştirilmiş pil performansı sunması bekleniyor. Yeni çip seti ve daha verimli enerji tüketimi sayesinde bu hedefin gerçekleştirilmesi mümkün görünüyor.\n\n### Bluetooth 5.3: Daha Güvenilir Bağlantı\n\nAirPods 4'ün, bağlantı kalitesini ve hızını artıran Bluetooth 5.3 desteği ile gelmesi bekleniyor. Bu teknoloji, daha az enerji harcayarak daha geniş bir kapsama alanı sunar ve cihazlar arasında daha hızlı veri transferi sağlar. Sonuç olarak, kullanıcılar daha kesintisiz ve yüksek kaliteli bir kablosuz ses deneyimi yaşayabilirler.\n\n### Gelişmiş Yapay Zekâ ve Siri Entegrasyonu\n\nApple, her yeni ürününde yapay zekâ ve akıllı asistan Siri ile entegrasyonu bir adım daha ileri taşıyor. AirPods 4'ün, Siri komutlarına daha hızlı ve doğru yanıt verebilen yeni mikrofon teknolojileri ile donatılması bekleniyor. Ayrıca, Sesle Kontrol ve Ses Paylaşımı gibi özellikler de bu modelde daha etkin bir şekilde kullanılabilir olacak.\n\n### Yüksek Çözünürlüklü Ses (Hi-Res Audio)\n\nApple'ın müzik kalitesini daha üst seviyelere taşımak amacıyla yüksek çözünürlüklü ses desteğini (Hi-Res Audio) AirPods 4'te sunması bekleniyor. Bu özellik, müzik severler için kristal netliğinde bir dinleme deneyimi sunacak ve her türlü müzik türünde üstün performans sağlayacak.\n\n### Sağlık ve Fitness İzleme\n\nAirPods 4'ün sağlık ve fitness özellikleri de önemli bir yenilik olabilir. Apple'ın, kulaklıklar aracılığıyla kalp atış hızı, kan oksijen seviyeleri ve hatta stres izleme gibi sağlık verilerini takip edebilen sensörleri eklemesi sürpriz olmaz. Bu tür özellikler, kullanıcıların genel sağlık durumlarını daha iyi izlemelerine yardımcı olacak.\n\n### Fiyat ve Çıkış Tarihi\n\nHenüz resmi olarak açıklanmış bir fiyat veya çıkış tarihi olmasa da, AirPods 4'ün 2023 yılında piyasaya sürülmesi bekleniyor. Fiyat açısından, gelişmiş özellikler ve yeni teknolojiler dikkate alındığında bir önceki modellerle benzer veya biraz daha yüksek bir fiyat aralığı öngörülüyor.\n\n### Sonuç: Beklenti ve Gerçekler\n\nAirPods 4, Apple ekosistemine en son yenilikleri getirmesi beklenen bir ürün olarak karşımızda duruyor. Gelişmiş ses kalitesi, daha uzun pil ömrü, yüksek çözünürlüklü ses desteği ve sağlık izleme özellikleri ile kullanıcı deneyimini bir üst seviyeye taşıyacak gibi görünüyor.\n\nEğer siz de teknoloji dünyasındaki en son yenilikleri merakla bekleyenlerdenseniz, AirPods 4 hakkında gelecek tüm yeni bilgileri ve resmi duyuruları kaçırmamak için blogumuzu takip etmeye devam edin. AirPods 4'ün piyasaya sürülmesiyle birlikte deneyimlerinizi ve düşüncelerinizi bizimle paylaşmayı unutmayın!",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        2400
+      ],
+      "id": "a491f4b7-0433-4e19-a196-d09924fcc4bc",
+      "name": "Basic LLM Chain3"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        660,
+        2620
+      ],
+      "id": "f2e28ebc-41b2-4722-a316-ed92b5b74f48",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "3d0YzkQcKcDSmeAK",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-wordpress.mkdir.dev/wp-json/wp/v2/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"title\": \"Airpods 4\",\n    \"content\":{{ $json.content }},\n    \"status\": \"publish\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        2400
+      ],
+      "id": "399b913a-bff4-4e4c-aa4a-7f2543b919d8",
+      "name": "Send Post2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "jh3PpyoQZbNfAgHp",
+          "name": "Wordpress Blog Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const postData = {\n  title: \"Airpods 4\",\n  content: JSON.stringify($json.response.text), // Burada escapeContent yerine doğrudan responseText kullanıyoruz\n  status: \"publish\"\n};\n\n// İşlem sonucunu döndürelim\nreturn postData; "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        360
+      ],
+      "id": "eb2bbfaf-7305-433d-a14f-b02c6b223298",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Upload Photo to Wordpress1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image via Gemini1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Create Image via Gemini1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Photo to Wordpress1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain3": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send Post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "22800d68-4207-47f1-ac09-8b5fef97db9b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3748f236d59aae9f79897feae105719bff56ad96a46ca40a289fa3e681f181e9"
+  },
+  "id": "dgl1STOf7YxbzGN5",
+  "tags": []
+}
