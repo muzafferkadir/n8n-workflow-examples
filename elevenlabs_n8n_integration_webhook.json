@@ -1,0 +1,233 @@
+{
+  "name": "Benimkisi Beni Tanıyor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f8f2b1ef-c356-4086-b85c-9cd01bfae48b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        -40
+      ],
+      "id": "9dd848fd-81f6-4d59-980b-e702a3c1be01",
+      "name": "Webhook",
+      "webhookId": "f8f2b1ef-c356-4086-b85c-9cd01bfae48b"
+    },
+    {
+      "parameters": {
+        "mode": "insert"
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -40
+      ],
+      "id": "1598c1ec-a928-4771-993c-c47c25f1b00e",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        220
+      ],
+      "id": "8531b004-cc49-44dc-964d-40af47bf692a",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "GjkHwzG3CFSitgvw",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        420,
+        220
+      ],
+      "id": "0a4afa13-eb03-4058-a030-019532301b55",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 900
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        500,
+        440
+      ],
+      "id": "70172306-b9e9-49f9-addf-ecc3789eeff1",
+      "name": "Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "211ed2c2-7fbe-4281-9bce-755965d9eaba",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        720
+      ],
+      "id": "51305763-8006-490e-9129-48ba5d4eb78d",
+      "name": "Webhook1",
+      "webhookId": "211ed2c2-7fbe-4281-9bce-755965d9eaba"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "prompt": "={{ $json?.body?.text }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.1,
+      "position": [
+        180,
+        720
+      ],
+      "id": "75494903-5f83-4f8d-ae3e-ae3547f403dc",
+      "name": "Simple Vector Store1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        980
+      ],
+      "id": "3f61af37-5963-4a56-8f1d-212b2e0e1ad8",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "GjkHwzG3CFSitgvw",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        720
+      ],
+      "id": "9a874eff-bdc6-4d26-a115-c7f3d8ea79ce",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1e396b3c-a9c7-4bcd-86d5-0e045e783f65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3748f236d59aae9f79897feae105719bff56ad96a46ca40a289fa3e681f181e9"
+  },
+  "id": "IAOMwyyEOnVm6GbY",
+  "tags": []
+}
