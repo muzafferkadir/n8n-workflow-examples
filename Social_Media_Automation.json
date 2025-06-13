@@ -1,0 +1,388 @@
+{
+  "name": "Social Media Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "5fa1bd2c-6f0b-4174-8f61-ab49cb2033b2",
+      "name": "Wait",
+      "webhookId": "674a0760-43aa-4256-8744-791eb8aaba13"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/flux/dev",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "key 09a6ef84-09f7-4531-b7b2-8529bafbe771:36cac2a7be6beaf2222faf92d0741057"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.output.imagePrompt }}"
+            },
+            {
+              "name": "image_size.width",
+              "value": "1024"
+            },
+            {
+              "name": "image_size.height",
+              "value": "1024"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "05abc49b-2173-4105-ada2-dcafb854375a",
+      "name": "Create Image"
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/flux/requests/{{ $json.request_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "key 09a6ef84-09f7-4531-b7b2-8529bafbe771:36cac2a7be6beaf2222faf92d0741057"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "90c3484b-6fd1-423c-a867-bdaead757dbc",
+      "name": "Check Image Process",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dmscamkz7/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "={{ $json.images[0].url }}"
+            },
+            {
+              "name": "upload_preset",
+              "value": "n8n-post-automation"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -100
+      ],
+      "id": "3b3e9424-20ee-4ba2-a784-83a60e93b895",
+      "name": "Upload Image to Cloudinary"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.result }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1620,
+        -100
+      ],
+      "id": "c11a4ef0-3b43-4749-833d-7d5052a419d0",
+      "name": "View Image"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -380,
+        0
+      ],
+      "id": "402522e2-7c22-4881-967e-053bcbcf4de6",
+      "name": "When chat message received",
+      "webhookId": "e5e399b3-8380-4fff-b191-62c88fac19b5"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Sen verilen başlık ve metinlere dayanarak;\n\n- Başlıktaki konuyu baz alıp, anlamlı ve dikkat çekici kısa bir \"title\" üret,\n- \"text1\" ve \"text2\" alanlarını, her biri maksimum 100 karakter olan, akıcı ve etkileyici kısa cümleler olarak oluştur,\n- \"subject\" alanını içeriğe uygun genel bir kategori olarak belirle (örneğin: Gündem, Teknoloji, Sağlık),\n- \"imagePrompt\" alanını, verilen konu ve metinlerle uyumlu, detaylı, zengin ve yaratıcı bir görsel betimlemesini İngilizce olarak yaz,\n- Çıktıyı JSON formatında, geçerli ve düzgün biçimde sun.\n\n\nÖrnek çıktı:\n\n{\n  \"title\": \"Ramazan Pidesi\",\n  \"text1\": \"Ramazan pidesinin bu sene fiyatı belli oldu.\",\n  \"text2\": \"Bu yıl ramazan pidesi 40₺ satışa sunulacak.\",\n  \"subject\": \"Gündem\",\n  \"imagePrompt\":\"A beautifully arranged assortment of freshly baked artisan breads displayed on a rustic wooden table in a warm, cozy bakery. Natural sunlight filters through a window, casting soft shadows. Loaves include sourdough, baguette, ciabatta, and whole wheat, with a dusting of flour on the crust. Golden-brown tones dominate, with steam rising gently from a sliced loaf. Background shows wooden shelves with more bread and jars of ingredients, evoking a cool yet inviting atmosphere.\"\n}\n"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "b5624790-3228-4e08-b3c4-6149d06f55c2",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        340
+      ],
+      "id": "9eae28bb-4779-49fe-8d8a-a517a50da33e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "4CKtdfuyKrbUGUaN",
+          "name": "OpenRouter test "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"Ramazan Pidesi\",\n  \"text1\": \"Ramazan pidesinin bu sene fiyatı belli oldu.\",\n  \"text2\": \"Bu yıl ramazan pidesi 40₺ satışa sunulacak.\",\n  \"subject\": \"Gündem\",\n  \"imagePrompt\":\"A beautifully arranged assortment of freshly baked artisan breads displayed on a rustic wooden table in a warm, cozy bakery. Natural sunlight filters through a window, casting soft shadows. Loaves include sourdough, baguette, ciabatta, and whole wheat, with a dusting of flour on the crust. Golden-brown tones dominate, with steam rising gently from a sliced loaf. Background shows wooden shelves with more bread and jars of ingredients, evoking a cool yet inviting atmosphere.\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -20,
+        300
+      ],
+      "id": "610722da-cf39-43e9-85b0-33bb34d3c061",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ac1dbbf0-db17-415c-947f-792e4bbe1219",
+              "name": "title",
+              "value": "={{ $('Basic LLM Chain').item.json.output.title.replace(/'/g, '').replace(/\"/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "4c1bf18b-b0cb-43d1-85c9-fecf32d5be78",
+              "name": "text1",
+              "value": "={{ $('Basic LLM Chain').item.json.output.text1.replace(/'/g, '').replace(/\"/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "79aa1f18-031b-47d1-b39b-4b742686d6da",
+              "name": "text2",
+              "value": "={{ $('Basic LLM Chain').item.json.output.text2.replace(/'/g, '').replace(/\"/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "feaea8ef-f954-4d52-90c8-e6e2cdb31c0a",
+              "name": "subject",
+              "value": "={{ $('Basic LLM Chain').item.json.output.subject.replace(/'/g, '').replace(/\"/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1140,
+        -100
+      ],
+      "id": "c2404fb2-4db3-480b-93a0-9d9f332a893c",
+      "name": "Remove Special Characters"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "97c4890b-0364-45a6-aeb5-feda94000108",
+              "name": "result",
+              "value": "=https://res.cloudinary.com/dmscamkz7/image/upload/l_2_bit4si/fl_layer_apply/co_rgb:F6DFC1,l_text:roboto_56_bold_normal_left:{{ encodeURIComponent($json.title).replace(/%/g, '%25') }}/fl_layer_apply,g_south_west,x_50,y_250/co_rgb:f6dfc1,l_text:verdana_32_normal_left:{{ encodeURIComponent($json.text1 ).replace(/%/g, '%25')}}/fl_layer_apply,g_south_west,x_50,y_150/co_rgb:f6dfc1,l_text:roboto_32_normal_left:{{ encodeURIComponent($json.text2).replace(/%/g, '%25') }}/fl_layer_apply,g_south_west,x_50,y_100/co_rgb:f6dfc1,l_text:roboto_48_bold_normal_left:{{ encodeURIComponent($json.subject).replace(/%/g, '%25') }}/fl_layer_apply,g_north_east,x_50,y_50/{{ $('Upload Image to Cloudinary').item.json.public_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1360,
+        -100
+      ],
+      "id": "fec5551a-e26b-4682-8fe2-4492ff086bdc",
+      "name": "Encode URI"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check Image Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Image Process": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Remove Special Characters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Special Characters": {
+      "main": [
+        [
+          {
+            "node": "Encode URI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode URI": {
+      "main": [
+        [
+          {
+            "node": "View Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12685f1b-be0e-4231-a4d4-8c505ac2fa3f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3748f236d59aae9f79897feae105719bff56ad96a46ca40a289fa3e681f181e9"
+  },
+  "id": "oyFk5TckkOGyu01u",
+  "tags": []
+}
